@@ -29,12 +29,10 @@ function App() {
   const handleTransfer = (targetLinePrefix) => {
     const [stopNum, currentLinePrefix] = currentStop.split('_');
     
-    // Find target line
     const targetLine = LEVELS[currentLevel].find(line => 
       line[0].split('_')[1] === targetLinePrefix
     );
     
-    // Find connecting stop in target line
     const targetStop = targetLine.find(stop => 
       stop.startsWith(`${stopNum}_`) && 
       stop.split('_').slice(2).includes(currentLinePrefix)
@@ -65,6 +63,7 @@ function App() {
         <div>{"Current Level: " + (currentLevel + 1)}</div>
         <div>{"Current Stop: " + currentStop.split("_")[0] + " " + currentStop.split("_")[1].toUpperCase()}</div>
         <div>{"Balance: $" + balance.toFixed(2)}</div>
+        <div>{"Goal: "}</div>
         <section className="actions">
           <button onClick={handleNextStop}>Next Stop</button>
           <section>
@@ -96,7 +95,7 @@ function App() {
   );
 }
 
-function GenerateMap({ level }) {
+function GenerateMap({ level, currentStop }) {
   const lines = {};
   const allStopNumbers = new Set();
   
@@ -222,13 +221,13 @@ function GenerateMap({ level }) {
       position: 'relative', 
       width: '100%', 
       minHeight: `${totalHeight}px`,
-      backgroundColor: '#f5f5f5',
+      backgroundImage: 'url(../public/assets/Untitled\ design.png)',
       padding: '40px',
       overflow: 'auto'
     }}>
       {Object.entries(lines).map(([lineName, stops]) => {
         const lineNumber = parseInt(lineName.split(' ')[1]);
-        const lineLetter = String.fromCharCode(64 + lineNumber); // 1->A, 2->B, etc.
+        const lineLetter = String.fromCharCode(64 + lineNumber);
         
         return (
           <div key={lineName} style={{ 
@@ -293,6 +292,20 @@ function GenerateMap({ level }) {
                 fontSize: '12px',
                 boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
               }}>
+                {stop.id === currentStop && (
+                  <div style={{
+                    position: 'absolute',
+                    top: '-20px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: '#ffeb3b',
+                    border: '2px solid #ff9800',
+                    zIndex: 4
+                  }} />
+                )}
                 {stop.number}
                 {stop.connections.length > 0 && (
                   <div style={{

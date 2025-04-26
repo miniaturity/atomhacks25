@@ -1,5 +1,6 @@
 body {
     overflow: hidden;
+    background-image: url(../public/assets/Untitled\ design.png);
 }
 
 .container {
@@ -231,4 +232,29 @@ body {
     opacity: 0.5;
     cursor: not-allowed;
     transform: none;
+  }
+
+  @keyframes moveDot {
+    from {
+      transform: translate(-50%, 20px);
+      opacity: 0;
+    }
+    to {
+      transform: translate(-50%, 0);
+      opacity: 1;
+    }
+  }
+  
+  .current-stop-indicator {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: #ffeb3b;
+    border: 2px solid #ff9800;
+    z-index: 4;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    animation: moveDot 0.3s ease-out forwards;
   }
