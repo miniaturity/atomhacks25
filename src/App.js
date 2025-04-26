@@ -1,6 +1,7 @@
 import './App.css';
 import React, { useState } from 'react';
 import { LEVELS } from './Levels';
+import { GOALS } from './LevelGoals';
 
 const getLineColor = (lineName) => {
   const colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00'];
@@ -11,22 +12,50 @@ const getLineColor = (lineName) => {
 function App() {
   const [currentLevel, setCurrentLevel] = useState(0);
   const [balance, setBalance] = useState(3.50);
-  const [currentStop, setCurrentStop] = useState(LEVELS[currentLevel][0][0]); // Start at first stop
+  const [currentStop, setCurrentStop] = useState(LEVELS[currentLevel][0][0]); 
+  const [hasWon, setHasWon] = useState(false);
+  const [disable, setDisable] = useState(false);
+  const [direction, setDirection] = useState(1);
+  const [moves, setMoves] = useState(0);
+
+  if (hasWon && !disable) {
+    setCurrentStop(GOALS[currentLevel])
+    setDisable(true);
+    return;
+  }
 
   const handleNextStop = () => {
     const [stopNum, linePrefix, ...connections] = currentStop.split('_');
-    const currentLine = LEVELS[currentLevel].find(line => 
+    const currentLine = LEVELS[currentLevel].find(line =>
       line[0].split('_')[1] === linePrefix
     );
-    
+  
     const currentIndex = currentLine.findIndex(stop => stop === currentStop);
     
-    if (currentIndex < currentLine.length - 1) {
-      setCurrentStop(currentLine[currentIndex + 1]);
+    let nextIndex = currentIndex + direction;
+    let newDirection = direction;
+    
+    if (nextIndex < 0 || nextIndex >= currentLine.length) {
+      newDirection = direction === 1 ? -1 : 1;
+      nextIndex = currentIndex + newDirection;
     }
-  };
+    
+    const nextStop = currentLine[nextIndex];
+    
+    if (nextStop) {
+      setCurrentStop(nextStop);
+      setDirection(newDirection);
+    }
+  
+    if (currentStop === GOALS[currentLevel]) {
+      setHasWon(true);
+    }
 
+    setMoves(moves + 1);
+  };
+  
   const handleTransfer = (targetLinePrefix) => {
+    if (hasWon) return;
     const [stopNum, currentLinePrefix] = currentStop.split('_');
     
     const targetLine = LEVELS[currentLevel].find(line => 
@@ -45,8 +74,11 @@ function App() {
   };
 
   const getAvailableTransfers = () => {
-    const [stopNum, currentLinePrefix, ...connections] = currentStop.split('_');
-    return connections.filter(conn => conn !== 'ee'); 
+    if (!currentStop) return []; 
+    const parts = currentStop.split('_');
+    if (parts.length < 3) return []; 
+    const [, , ...connections] = parts;
+    return connections;
   };
 
   const availableTransfers = getAvailableTransfers();
@@ -60,15 +92,16 @@ function App() {
         onNextStop={handleNextStop}
       />
       <div className="menuSideBar">
-        <div>{"Current Level: " + (currentLevel + 1)}</div>
-        <div>{"Current Stop: " + currentStop.split("_")[0] + " " + currentStop.split("_")[1].toUpperCase()}</div>
-        <div>{"Balance: $" + balance.toFixed(2)}</div>
-        <div>{"Goal: "}</div>
+        <div className="level">{"Current Level: " + (currentLevel + 1)}</div>
+        <div className="stop">{"Current Stop: " + currentStop.split("_")[0] + " " + currentStop.split("_")[1].toUpperCase()}</div>
+        <div className="bal">{"Balance: $" + balance.toFixed(2)}</div>
+        <div className="goal">{"Goal: " + GOALS[currentLevel].split("_")[0] + GOALS[currentLevel].split("_")[1].toUpperCase()}</div>
+        <div className="moves">{"Moves: " + moves}</div>
         <section className="actions">
           <button onClick={handleNextStop}>Next Stop</button>
           <section>
             <h1>Transfer</h1>
-            {availableTransfers.length > 0 ? (
+            {hasWon ? <p className='no-transfers'>You won! </p> : availableTransfers.length > 0 ? (
               <div className="transfer-options">
                 {availableTransfers.map(transferPrefix => {
                   const lineIndex = LEVELS[currentLevel].findIndex(line => 
@@ -86,9 +119,12 @@ function App() {
                 })}
               </div>
             ) : (
-              <p className="no-transfers">No transfers available here</p>
+             <p className="no-transfers">No transfers available here</p>
             )}
+            
           </section>
+          <button> Next Level </button>
+
         </section>
       </div>
     </div>
@@ -105,6 +141,7 @@ function GenerateMap({ level, currentStop }) {
       allStopNumbers.add(parseInt(stopNum));
     });
   });
+  
   
   const sortedStopNumbers = Array.from(allStopNumbers).sort((a, b) => a - b);
   
