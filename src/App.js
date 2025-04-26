@@ -1,7 +1,7 @@
 import './App.css';
-import React, { useState } from 'react';
-import { LEVELS } from './Levels';
-import { GOALS } from './LevelGoals';
+import React, { useState, useEffect } from 'react';
+import { LEVELS, GOALS, BALANCES, DELAYS } from './Levels';
+
 
 const getLineColor = (lineName) => {
   const colors = ['#e41a1c', '#377eb8', '#4daf4a', '#984ea3', '#ff7f00'];
@@ -11,20 +11,68 @@ const getLineColor = (lineName) => {
 
 function App() {
   const [currentLevel, setCurrentLevel] = useState(0);
-  const [balance, setBalance] = useState(3.50);
+  const [delays, setDelays] = useState(DELAYS[currentLevel])
+  const [balance, setBalance] = useState(BALANCES[currentLevel]);
   const [currentStop, setCurrentStop] = useState(LEVELS[currentLevel][0][0]); 
   const [hasWon, setHasWon] = useState(false);
+  const [hasLost, setHasLost] = useState(false);
   const [disable, setDisable] = useState(false);
   const [direction, setDirection] = useState(1);
   const [moves, setMoves] = useState(0);
+  const [message, setMessage] = useState("Stand clear of the closing doors, please.");
+  const [score, setScore] = useState(100);
+
+  useEffect(() => {
+    setHasWon(false);
+    setBalance(BALANCES[currentLevel]);
+    setMoves(0);
+    setCurrentStop(LEVELS[currentLevel][0][0]);
+    setDisable(false);
+    setDirection(1);
+    setMessage("Stand clear of the closing doors, please.");
+    setDelays(DELAYS[currentLevel]);
+  }, [currentLevel]);
 
   if (hasWon && !disable) {
     setCurrentStop(GOALS[currentLevel])
     setDisable(true);
+    setMoves(moves - 1);
     return;
   }
 
+  const handleNextLevel = () => {
+    if (!hasWon) return;
+    setCurrentLevel(prevLevel => {
+      const nextLevel = prevLevel + 1;
+      if (nextLevel >= LEVELS.length) {
+        setMessage("You've completed all levels!");
+        return prevLevel;
+      }
+      return nextLevel;
+    });
+  };
+
+  const resetLevel = () => {
+    console.log(currentLevel);
+    setHasWon(false);
+    setBalance(BALANCES[currentLevel]);
+    setMoves(0);
+    setCurrentStop(LEVELS[currentLevel][0][0]);
+    setDisable(false);
+    setDirection(1);
+    setMessage("Stand clear of the closing doors, please.");
+    setDelays(DELAYS[currentLevel]);
+  }
+
   const handleNextStop = () => {
+    const delayInfo = DELAYS[currentLevel].find(([stop]) => stop === currentStop)
+    console.log(delayInfo);
+    if (delayInfo && moves < delayInfo[1]) {
+      setMoves(moves + 1);
+      setMessage("This line is currently experiencing delays.")
+      return;
+    }
+
     const [stopNum, linePrefix, ...connections] = currentStop.split('_');
     const currentLine = LEVELS[currentLevel].find(line =>
       line[0].split('_')[1] === linePrefix
@@ -38,6 +86,9 @@ function App() {
     if (nextIndex < 0 || nextIndex >= currentLine.length) {
       newDirection = direction === 1 ? -1 : 1;
       nextIndex = currentIndex + newDirection;
+      setMessage("This is the last stop; please get off the train.")
+    } else {
+      setMessage("Stand clear of the closing doors, please.")
     }
     
     const nextStop = currentLine[nextIndex];
@@ -46,16 +97,22 @@ function App() {
       setCurrentStop(nextStop);
       setDirection(newDirection);
     }
-  
-    if (currentStop === GOALS[currentLevel]) {
-      setHasWon(true);
-    }
 
+    if (nextStop === GOALS[currentLevel]) {
+      setHasWon(true);
+      setScore(parseInt(balance) * (score - moves));
+    }
     setMoves(moves + 1);
   };
+
   
   const handleTransfer = (targetLinePrefix) => {
     if (hasWon) return;
+    console.log("run");
+    if (balance === 0) {
+      setMessage("!!!! Your balance is too low, you lost :( !!!!");
+      return;
+    }
     const [stopNum, currentLinePrefix] = currentStop.split('_');
     
     const targetLine = LEVELS[currentLevel].find(line => 
@@ -70,6 +127,10 @@ function App() {
     if (targetStop) {
       setCurrentStop(targetStop);
       setBalance(prev => prev - 1.75);
+    }
+
+    if (targetStop === GOALS[currentLevel]) {
+      setHasWon(true);
     }
   };
 
@@ -93,15 +154,17 @@ function App() {
       />
       <div className="menuSideBar">
         <div className="level">{"Current Level: " + (currentLevel + 1)}</div>
-        <div className="stop">{"Current Stop: " + currentStop.split("_")[0] + " " + currentStop.split("_")[1].toUpperCase()}</div>
+        <div className="stop">{"Current Stop: " + currentStop.split("_")[0] + currentStop.split("_")[1].toUpperCase()}</div>
         <div className="bal">{"Balance: $" + balance.toFixed(2)}</div>
         <div className="goal">{"Goal: " + GOALS[currentLevel].split("_")[0] + GOALS[currentLevel].split("_")[1].toUpperCase()}</div>
         <div className="moves">{"Moves: " + moves}</div>
         <section className="actions">
-          <button onClick={handleNextStop}>Next Stop</button>
+          <button onClick={handleNextStop} style={{
+            backgroundColor: '#2ecc71'
+          }}>Next Stop</button>
           <section>
             <h1>Transfer</h1>
-            {hasWon ? <p className='no-transfers'>You won! </p> : availableTransfers.length > 0 ? (
+            {hasWon ? <p className='no-transfers'>{`You won! Score: ${score}`}  </p> : availableTransfers.length > 0 ? (
               <div className="transfer-options">
                 {availableTransfers.map(transferPrefix => {
                   const lineIndex = LEVELS[currentLevel].findIndex(line => 
@@ -123,10 +186,12 @@ function App() {
             )}
             
           </section>
-          <button> Next Level </button>
-
+          <button onClick={handleNextLevel}> Next Level </button>
+          <button onClick={resetLevel}> Reset Level </button>
+          
         </section>
       </div>
+      <footer><marquee>DELAYS: {delays.map(del => `${del[0].split("_")[0]+del[0].split("_")[1].toUpperCase()} - ${del[1]} STOPS, `)} | ANNOUNCEMENTS: {message}</marquee></footer>
     </div>
   );
 }
@@ -273,7 +338,6 @@ function GenerateMap({ level, currentStop }) {
             height: `${lineSpacing}px`,
             top: `${linePositions[lineName].verticalPosition}px`
           }}>
-            {/* Line indicator circle with letter */}
             <div style={{
               position: 'absolute',
               left: '10px',
@@ -407,7 +471,8 @@ function TutorialWindow() {
         <div className="tutorial-content">
           <div className="tutorial-step">
             <h3>How to Play</h3>
-            <p>Navigate through the subway system by selecting stops.</p>
+            <p>Navigate through the subway system by moving through stops, by pressing the <strong>Next Stop</strong> button. Transfer to other subway lines in the <strong>Transfer</strong> menu. Make it to your goal without spending all of your balance. Try to get the highest score!</p>
+          
           </div>
           
           <div className="tutorial-step">
@@ -418,12 +483,14 @@ function TutorialWindow() {
               <span className="line-example" style={{ backgroundColor: '#377eb8' }}>B</span>
               <span className="line-example" style={{ backgroundColor: '#4daf4a' }}>C</span>
             </div>
+            <p> The orange dot is you. </p>
           </div>
           
           <div className="tutorial-step">
             <h3>Connections</h3>
             <p>Transfer between lines at connected stations (marked with dots).
-            Make it to your destination without spending all of your balance!</p>
+              Each transfer costs $1.75.
+            </p>
           </div>
           
           <button 

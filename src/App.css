@@ -24,26 +24,35 @@ body {
   
   .menuSideBar div {
     padding: 12px 15px;
-    background-color: #34495e;
     border-radius: 6px;
     font-size: 16px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   
-  .menuSideBar div:nth-child(1) {
+  .level {
     background-color: #3498db; 
     font-weight: bold;
   }
   
-  .menuSideBar div:nth-child(2) {
+  .stop {
     background-color: #2ecc71; 
     font-weight: bold;
   }
   
-  .menuSideBar div:nth-child(3) {
+  .bal {
     background-color: #f39c12; 
     font-weight: bold;
   }
+
+  .goal {
+    background-color: #f312bf;
+    font-weight: bold;
+  }
+
+  .moves {
+    background-color: #a412f3;
+    font-weight: bold;
+  }
+  
   
   @media (max-width: 768px) {
     .container {
@@ -183,7 +192,6 @@ body {
     }
   }
 
-  /* Add to App.css */
 .actions {
     margin-top: 20px;
   }
@@ -234,27 +242,31 @@ body {
     transform: none;
   }
 
-  @keyframes moveDot {
-    from {
-      transform: translate(-50%, 20px);
-      opacity: 0;
-    }
-    to {
-      transform: translate(-50%, 0);
-      opacity: 1;
-    }
-  }
-  
-  .current-stop-indicator {
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background-color: #ffeb3b;
-    border: 2px solid #ff9800;
-    z-index: 4;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    animation: moveDot 0.3s ease-out forwards;
-  }
+.current-stop-indicator {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background-color: #ffeb3b;
+  border: 2px solid #ff9800;
+  z-index: 4;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  animation: moveDot 0.3s ease-out forwards;
+}
+
+.nextstop {
+    background-color: #2ecc71;
+}
+
+footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: rgb(88, 88, 88);
+    color: rgb(255, 251, 0);
+    text-align: center;
+}
+
